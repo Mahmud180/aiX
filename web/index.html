@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>aiX</title>
+<style>
+  :root{--bg:#0d1014;--panel:#161b22;--card:#1c232c;--card2:#222b35;--line:#2b333d;--fg:#e6edf3;
+        --muted:#8b97a6;--accent:#4f9dff;--good:#3fb950;--bad:#f85149;--warn:#d29922;}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;display:grid;grid-template-columns:220px 1fr 380px;grid-template-rows:52px 1fr;
+       font:14px/1.5 system-ui,Segoe UI,Arial;background:var(--bg);color:var(--fg);overflow:hidden}
+  header{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:0 14px;
+         border-bottom:1px solid var(--line);background:var(--panel)}
+  header h1{font-size:16px;margin:0 12px 0 0}
+  .spacer{flex:1}
+  .muted{color:var(--muted)}
+  button{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;
+         padding:5px 10px;cursor:pointer;font-size:13px}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#04101f;font-weight:600}
+  button.danger{border-color:var(--bad);color:var(--bad)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bad);margin-right:4px}
+  .dot.on{background:var(--good)}
+
+  #chats{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-width:0}
+  #chats .top{padding:10px}
+  #chatlist{flex:1;min-height:0;overflow-y:auto;padding:0 8px 10px}
+  .chatitem{display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;cursor:pointer;margin-bottom:4px}
+  .chatitem:hover{background:var(--card)}
+  .chatitem.active{background:var(--card2);border:1px solid var(--line)}
+  .chatitem .t{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13px}
+  .chatitem .r,.chatitem .d{opacity:0;color:var(--muted);font-size:13px}
+  .chatitem:hover .r,.chatitem:hover .d{opacity:1}
+  .chatitem .r:hover{color:var(--accent)} .chatitem .d:hover{color:var(--bad)}
+  .chatitem .run{display:none;color:var(--accent);font-size:12px;animation:blink 1s steps(2) infinite}
+  .chatitem.running .run{display:inline}
+
+  #chat{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+  #log{flex:1;min-height:0;overflow-y:auto;padding:18px 22px}
+  .msg{margin-bottom:14px;display:flex;gap:10px}
+  .msg .who{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);width:40px;flex:none;padding-top:4px}
+  .bubble{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 13px;
+          max-width:min(760px,82%);white-space:pre-wrap;word-break:break-word}
+  .msg.user{flex-direction:row-reverse}
+  .msg.user .who{text-align:right}
+  .msg.user .bubble{background:#152232;border-color:#24384f}
+  .tool{font-size:12px;color:var(--muted);border-left:2px solid var(--warn);padding:2px 0 2px 10px;margin:6px 0 6px 50px;
+        white-space:pre-wrap;word-break:break-word;max-width:720px}
+  .tool b{color:#e3b341}
+  .empty{color:var(--muted);text-align:center;margin-top:40px}
+  .gennote{color:var(--accent);font-size:12px;margin:6px 0 6px 50px}
+
+  #composer{border-top:1px solid var(--line);padding:10px 16px;background:var(--panel)}
+  #chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  #chips:empty{display:none}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px;display:flex;gap:6px;align-items:center}
+  .chip .x{cursor:pointer;color:var(--muted)} .chip .x:hover{color:var(--bad)}
+  #inputrow{display:flex;gap:8px;align-items:flex-end}
+  textarea{flex:1;resize:none;height:46px;max-height:180px;overflow-y:auto;background:var(--card);color:var(--fg);
+           border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit}
+  #plus{width:46px;height:46px;font-size:22px;line-height:1;flex:none}
+  #send{height:46px;padding:0 18px;flex:none}
+  #stop{display:none;height:46px;padding:0 16px;flex:none;border-color:var(--bad);color:var(--bad);font-weight:600}
+  body.busy #stop{display:block}
+  body.busy #send{display:none}
+  #drop{position:fixed;inset:0;background:rgba(13,16,20,.85);border:3px dashed var(--accent);
+        display:none;align-items:center;justify-content:center;font-size:22px;color:var(--accent);z-index:50}
+  #drop.show{display:flex}
+
+  aside{border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+  aside .tabs{display:flex;gap:6px;padding:10px;border-bottom:1px solid var(--line)}
+  aside .panel{flex:1;min-height:0;overflow-y:auto;padding:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:12px}
+  .card img,.card video{width:100%;display:block;background:#000;max-height:220px;object-fit:contain}
+  .card .body{padding:8px 10px;font-size:12px}
+  .card .prompt{color:var(--muted);max-height:34px;overflow:hidden}
+  .row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .row button{flex:1;padding:5px;font-size:12px}
+  .pin{color:var(--warn)}
+  #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--card2);
+         border:1px solid var(--line);border-radius:8px;padding:8px 14px;display:none;z-index:60}
+  #banner{position:fixed;top:52px;left:0;right:0;background:#3a2a00;color:#f0b34a;border-bottom:1px solid #5a4200;
+          padding:7px 14px;font-size:13px;text-align:center;display:none;z-index:55}
+  #banner.show{display:block}
+  #loadtag{display:none;color:var(--accent);font-size:12px}
+  body.busy #loadtag{display:inline}
+  *::-webkit-scrollbar{width:11px;height:11px}
+  *::-webkit-scrollbar-track{background:var(--panel)}
+  *::-webkit-scrollbar-thumb{background:#3a444f;border-radius:6px;border:2px solid var(--panel)}
+  *::-webkit-scrollbar-thumb:hover{background:#4a5765}
+  *{scrollbar-color:#3a444f var(--panel);scrollbar-width:thin}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+  @media (max-width:1150px){ body{grid-template-columns:200px 1fr 0} aside{display:none} }
+  @media (max-width:820px){ body{grid-template-columns:0 1fr 0} #chats{display:none} }
+</style>
+</head>
+<body>
+<header>
+  <h1>aiX</h1>
+  <span class="muted"><span id="olDot" class="dot"></span>ollama</span>
+  <span class="muted"><span id="cfDot" class="dot"></span>comfyui</span>
+  <span class="muted">model <b id="modelName">?</b></span>
+  <span class="muted">free <b id="freeGb">?</b> GB</span>
+  <span id="loadtag">● loading model…</span>
+  <span class="spacer"></span>
+  <button onclick="ctl('start')">Start</button>
+  <button onclick="ctl('stop')">Stop</button>
+  <button onclick="ctl('restart')">Restart</button>
+  <button onclick="doClean()">Clean</button>
+  <button onclick="ctl('recover')">Recover</button>
+  <button class="danger" onclick="shutdown()">Close</button>
+</header>
+<div id="banner">server offline — reconnecting…</div>
+
+<div id="chats">
+  <div class="top"><button class="primary" style="width:100%" onclick="newChat()">+ New chat</button></div>
+  <div id="chatlist"></div>
+</div>
+
+<section id="chat">
+  <div id="log"></div>
+  <div id="composer">
+    <div id="chips"></div>
+    <div id="inputrow">
+      <button id="plus" title="Attach image/video">+</button>
+      <textarea id="text" placeholder="Ask aiX…  (drop a file, or press + to attach)"></textarea>
+      <button class="primary" id="send">Send</button>
+      <button id="stop" title="Cancel (Esc)">Stop</button>
+    </div>
+    <input type="file" id="file" multiple style="display:none">
+  </div>
+</section>
+
+<aside>
+  <div class="tabs">
+    <button class="tab primary" data-t="outputs">Outputs</button>
+    <button class="tab" data-t="jobs">Jobs</button>
+  </div>
+  <div class="panel" id="panel"></div>
+</aside>
+
+<div id="drop">Drop files to attach</div>
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let chatId = localStorage.getItem('aix_chat') || null;
+let attachments = [];
+let busy = false;
+let runningChat = null;
+let src = null;            // active EventSource
+let liveBubble = null, liveAcc = '';
+let online = true;
+function setOnline(v){
+  if(v===online) return;
+  online=v;
+  $('#banner').classList.toggle('show', !v);
+  if(v){ loadChatList(); renderPanel(); }
+}
+
+function toast(t){ const el=$('#toast'); el.textContent=t; el.style.display='block'; clearTimeout(el._t); el._t=setTimeout(()=>el.style.display='none',2500); }
+function esc(t){ return (t||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function scroll(){ const l=$('#log'); l.scrollTop=l.scrollHeight; }
+
+// ---- rendering ----
+function addMsg(who, text){
+  const d=document.createElement('div'); d.className='msg '+who;
+  d.innerHTML=`<div class="who">${who}</div><div class="bubble"></div>`;
+  d.querySelector('.bubble').textContent=text||'';
+  $('#log').appendChild(d); scroll(); return d.querySelector('.bubble');
+}
+function addTool(text){ const d=document.createElement('div'); d.className='tool'; d.textContent=text; $('#log').appendChild(d); scroll(); }
+function renderHistory(messages){
+  $('#log').innerHTML='';
+  if(!messages || !messages.length){ $('#log').innerHTML='<div class="empty">Start chatting with aiX.</div>'; return; }
+  for(const m of messages){
+    if(m.role==='user' && typeof m.content==='string' && m.content.trim()) addMsg('you', m.content);
+    else if(m.role==='assistant' && typeof m.content==='string' && m.content.trim()) addMsg('aiX', m.content);
+    else if(m.role==='tool') addTool('◀ '+(m.tool_name||'tool')+': '+String(m.content||'').slice(0,400));
+  }
+}
+
+// ---- chats ----
+async function loadChatList(){
+  const r = await (await fetch('/api/chats')).json();
+  const list = $('#chatlist'); list.innerHTML='';
+  if(!r.chats.length){ list.innerHTML='<div class="muted" style="padding:8px 10px;font-size:12px">No chats yet.</div>'; return; }
+  for(const c of r.chats){
+    const el=document.createElement('div');
+    el.className='chatitem'+(c.id===chatId?' active':'')+(c.id===runningChat?' running':'');
+    el.innerHTML=`<span class="run">●</span><span class="t">${esc(c.title)}</span><span class="r" title="rename">✎</span><span class="d" title="delete">✕</span>`;
+    el.querySelector('.t').onclick=()=>openChat(c.id);
+    el.querySelector('.r').onclick=e=>{ e.stopPropagation(); const t=prompt('Rename chat', c.title); if(t) fetch('/api/chats/'+c.id+'/rename',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:t})}).then(loadChatList); };
+    el.querySelector('.d').onclick=async e=>{ e.stopPropagation(); if(confirm('Delete this chat?')){ await fetch('/api/chats/'+c.id,{method:'DELETE'}); if(c.id===chatId){ newChat(); } loadChatList(); } };
+    list.appendChild(el);
+  }
+}
+async function refreshChat(id){
+  const c = await (await fetch('/api/chats/'+id)).json();
+  renderHistory(c.messages||[]);
+}
+async function openChat(id){
+  chatId=id; localStorage.setItem('aix_chat', id);
+  if(src){ src.close(); src=null; }
+  await refreshChat(id);
+  await loadChatList();
+  const s=await (await fetch('/api/status')).json();
+  runningChat=s.running_chat; await loadChatList();
+  if(s.running_chat===id){ busy=true; document.body.classList.add('busy'); subscribe(id); }
+  else { busy=false; document.body.classList.remove('busy'); }
+}
+function newChat(){
+  if(src){ src.close(); src=null; }
+  chatId=null; localStorage.removeItem('aix_chat');
+  busy=false; document.body.classList.remove('busy');
+  renderHistory([]); loadChatList(); $('#text').focus();
+}
+
+// ---- streaming ----
+function subscribe(id){
+  if(src){ src.close(); src=null; }
+  liveBubble=null; liveAcc='';
+  src=new EventSource('/api/chat/stream/'+id);
+  src.onmessage=(e)=>{
+    let ev; try{ ev=JSON.parse(e.data); }catch(_){ return; }
+    const here = (chatId===id);
+    if(ev.kind==='delta'){
+      if(!here) return;
+      if(!liveBubble){ if($('#log .empty')) $('#log').innerHTML=''; liveBubble=addMsg('aiX',''); }
+      liveAcc+=ev.text; liveBubble.textContent=liveAcc; scroll();
+    } else if(ev.kind==='tool_call'){ if(here) addTool('▶ '+ev.name+' '+JSON.stringify(ev.args||{})); }
+    else if(ev.kind==='tool_result'){ if(here) addTool('◀ '+ev.name+': '+String(ev.result||'').slice(0,400)); renderOutputs(); }
+    else if(ev.kind==='assistant'){ if(here){ if(!liveBubble) liveBubble=addMsg('aiX',''); liveBubble.textContent=ev.text; } }
+    else if(ev.kind==='error'){ addTool('⚠ '+ev.message); }
+    else if(ev.kind==='cancelled'){ addTool('■ cancelled'); }
+    else if(ev.kind==='done'){ finish(id); }
+  };
+  src.onerror=()=>{ if(src && src.readyState===EventSource.CLOSED){ finish(id); } else { setOnline(false); } };
+}
+function finish(id){
+  if(src){ src.close(); src=null; }
+  busy=false; document.body.classList.remove('busy');
+  liveBubble=null; liveAcc='';
+  loadChatList(); renderOutputs();
+  if(chatId===id) refreshChat(id);
+}
+
+async function send(){
+  if(busy) return;
+  const t=$('#text'); const msg=t.value.trim(); if(!msg) return;
+  t.value=''; t.style.height='46px';
+  if($('#log .empty')) $('#log').innerHTML='';
+  addMsg('you', msg);
+  try{
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:msg, chat_id:chatId})});
+    const j=await r.json();
+    if(r.status===409){ addTool('⚠ another chat is generating. Stop it or wait, then resend.'); return; }
+    chatId=j.chat_id; localStorage.setItem('aix_chat',chatId);
+    busy=true; document.body.classList.add('busy');
+    runningChat=chatId; loadChatList();
+    subscribe(chatId);
+  }catch(e){ setOnline(false); addTool('⚠ connection lost — is the server running?'); }
+}
+async function stopTurn(){ try{ await fetch('/api/cancel',{method:'POST'}); }catch(e){} }
+
+// ---- uploads ----
+$('#plus').onclick=()=>$('#file').click();
+$('#file').onchange=e=>{ uploadFiles(e.target.files); e.target.value=''; };
+$('#text').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } });
+$('#text').addEventListener('input',e=>{ e.target.style.height='46px'; e.target.style.height=Math.min(e.target.scrollHeight,180)+'px'; });
+$('#send').onclick=send;
+$('#stop').onclick=stopTurn;
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && busy) stopTurn(); });
+let dragDepth=0;
+document.addEventListener('dragenter',e=>{ e.preventDefault(); dragDepth++; $('#drop').classList.add('show'); });
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('dragleave',e=>{ dragDepth--; if(dragDepth<=0) $('#drop').classList.remove('show'); });
+document.addEventListener('drop',e=>{ e.preventDefault(); dragDepth=0; $('#drop').classList.remove('show'); if(e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files); });
+async function uploadFiles(files){
+  if(!files||!files.length) return;
+  const fd=new FormData(); for(const f of files) fd.append('file',f);
+  const r=await (await fetch('/api/upload',{method:'POST',body:fd})).json();
+  attachments=r.attachments||[]; renderChips(); toast('Attached '+ (r.saved||[]).join(', '));
+}
+function renderChips(){
+  $('#chips').innerHTML='';
+  attachments.forEach(a=>{
+    const c=document.createElement('div'); c.className='chip';
+    c.innerHTML=`<span>${esc(a.name)}</span><span class="x" title="remove">✕</span>`;
+    c.querySelector('.x').onclick=async()=>{ await fetch('/api/attachments/'+encodeURIComponent(a.name),{method:'DELETE'}); attachments=attachments.filter(x=>x.name!==a.name); renderChips(); };
+    $('#chips').appendChild(c);
+  });
+}
+
+// ---- outputs ----
+let tab=localStorage.getItem('aix_tab')||'outputs';
+function applyTab(){ document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('primary',x.dataset.t===tab)); }
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{ tab=b.dataset.t; localStorage.setItem('aix_tab',tab); applyTab(); renderPanel(); });
+async function renderOutputs(){ if(tab==='outputs') renderPanel(); }
+async function renderPanel(){
+  const p=$('#panel');
+  if(tab==='jobs'){ const r=await (await fetch('/api/status')).json(); p.innerHTML='<pre style="white-space:pre-wrap;font-size:12px">'+esc(JSON.stringify(r.recovery||{},null,2))+'</pre>'; return; }
+  const r=await (await fetch('/api/outputs')).json(); p.innerHTML='';
+  if(!r.outputs.length){ p.innerHTML='<div class="muted" style="text-align:center;margin-top:20px">No outputs yet.</div>'; return; }
+  r.outputs.forEach(o=>{
+    const c=document.createElement('div'); c.className='card';
+    const media=o.kind==='video'?`<video src="/api/file/${o.id}" controls preload="metadata"></video>`:`<img src="/api/file/${o.id}">`;
+    c.innerHTML=`${media}<div class="body">
+      <div class="prompt">${o.pinned?'<span class="pin">★ </span>':''}${esc(o.prompt||o.name)}</div>
+      <div class="muted">${esc(o.model||'')} · ${(o.size/1048576).toFixed(2)} MB</div>
+      <div class="row"><button onclick="dl('${o.id}')">Download</button><button onclick="exportOut('${o.id}',false)">Export</button><button onclick="exportOut('${o.id}',true)">Export+free D:</button></div>
+      <div class="row"><button onclick="pin('${o.id}',${!o.pinned})">${o.pinned?'Unpin':'Pin'}</button><button class="danger" onclick="del('${o.id}')">Delete</button></div>
+    </div>`;
+    p.appendChild(c);
+  });
+}
+function dl(id){ window.location='/api/download/'+id; }
+async function exportOut(id,move){ const r=await (await fetch('/api/export/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({move})})).json(); toast(r.ok?('Exported to '+r.dest):'Export failed'); renderPanel(); }
+async function pin(id,v){ await fetch('/api/pin/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:v})}); renderPanel(); }
+async function del(id){ if(confirm('Delete this output?')){ await fetch('/api/delete/'+id,{method:'POST'}); renderPanel(); } }
+
+// ---- controls / status ----
+async function ctl(a){ toast(a+'…'); const r=await (await fetch('/api/control/'+a,{method:'POST'})).json(); toast(a+': '+JSON.stringify(r)); status(); }
+async function doClean(){ const r=await (await fetch('/api/clean',{method:'POST'})).json(); toast('clean: '+JSON.stringify(r)); status(); renderPanel(); }
+async function shutdown(){ if(confirm('Stop all aiX processes (incl. Ollama) and close?')){ await fetch('/api/shutdown',{method:'POST'}); toast('Shutting down…'); } }
+async function status(){
+  try{ const s=await (await fetch('/api/status')).json();
+    setOnline(true);
+    $('#olDot').className='dot'+(s.ollama?' on':''); $('#cfDot').className='dot'+(s.comfyui?' on':'');
+    $('#modelName').textContent=s.model||'?'; $('#freeGb').textContent=s.free_gb;
+    if(busy) $('#loadtag').textContent = s.model_loaded ? '● generating…' : '● loading model…';
+    if(s.running_chat!==runningChat){ runningChat=s.running_chat; loadChatList(); }
+  }catch(e){ setOnline(false); }
+}
+
+// ---- boot ----
+(async function(){
+  applyTab();
+  await loadChatList();
+  if(chatId){
+    try{ const c=await (await fetch('/api/chats/'+chatId)).json(); if(c && c.messages!==undefined) await openChat(chatId); else newChat(); }
+    catch(e){ newChat(); }
+  } else renderHistory([]);
+  renderChips(); renderPanel(); status();
+  setInterval(status,4000); setInterval(renderOutputs,8000);
+})();
+</script>
+</body>
+</html>

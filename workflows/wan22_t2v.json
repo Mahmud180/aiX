@@ -1,0 +1,12 @@
+{
+  "unet": { "class_type": "UNETLoader", "inputs": { "unet_name": "wan2.2_ti2v_5B_fp16.safetensors", "weight_dtype": "default" } },
+  "shift": { "class_type": "ModelSamplingSD3", "inputs": { "model": ["unet", 0], "shift": 8.0 } },
+  "clip": { "class_type": "CLIPLoader", "inputs": { "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "type": "wan" } },
+  "vae": { "class_type": "VAELoader", "inputs": { "vae_name": "wan2.2_vae.safetensors" } },
+  "positive": { "class_type": "CLIPTextEncode", "inputs": { "text": "PROMPT", "clip": ["clip", 0] } },
+  "negative": { "class_type": "CLIPTextEncode", "inputs": { "text": "NEG", "clip": ["clip", 0] } },
+  "latent": { "class_type": "Wan22ImageToVideoLatent", "inputs": { "vae": ["vae", 0], "width": 832, "height": 480, "length": 49, "batch_size": 1 } },
+  "sampler": { "class_type": "KSampler", "inputs": { "model": ["shift", 0], "seed": 0, "steps": 30, "cfg": 5.0, "sampler_name": "euler", "scheduler": "simple", "positive": ["positive", 0], "negative": ["negative", 0], "latent_image": ["latent", 0], "denoise": 1.0 } },
+  "decode": { "class_type": "VAEDecode", "inputs": { "samples": ["sampler", 0], "vae": ["vae", 0] } },
+  "save": { "class_type": "SaveWEBM", "inputs": { "images": ["decode", 0], "filename_prefix": "aix/vid", "codec": "vp9", "fps": 24, "crf": 28 } }
+}

@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+chats/
+media/
+inputs/
+run/
+logs/sessions/
+*.log
+.venv/
