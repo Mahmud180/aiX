@@ -1,7 +1,6 @@
-"""Process manager: start/stop/status for the aiX stack (Ollama + ComfyUI).
+"""Start/stop/status for Ollama and ComfyUI.
 
-PIDs are tracked in run/processes.json so Stop/Close can terminate exactly the
-processes we started (and not unrelated ones).
+Tracks the PIDs it starts in run/processes.json.
 """
 
 import os

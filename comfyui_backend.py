@@ -1,10 +1,4 @@
-"""ComfyUI backend: real diffusion image/video via ComfyUI's HTTP API.
-
-Supports text-to-image (FLUX), text-to-video and image-to-video (Wan 2.2
-TI2V-5B), and instruction image editing (FLUX Kontext). Workflows are API-format
-JSON in workflows/. Results are written to OUTPUT_DIR and registered in the
-library. Nothing large is written to C:.
-"""
+"""ComfyUI HTTP client for image/video generation."""
 
 import json
 import math
@@ -38,8 +32,8 @@ DEFAULT_NEGATIVE = (
     "jpeg artifacts, overexposed, static"
 )
 
-# Video limits for a 12 GB card: Wan 2.2 TI2V is native 24 fps and a single
-# shot beyond ~121 frames (5 s) thrashes. Longer requests are segmented.
+# Wan 2.2 TI2V is native 24 fps; one shot beyond 121 frames (5 s) thrashes on
+# 12 GB. Longer requests are split into segments.
 VIDEO_FPS = 24
 MAX_VIDEO_FRAMES = 121
 
@@ -290,7 +284,6 @@ def _length_from(seconds, fps):
     return ((length - 1) // 4) * 4 + 1
 
 
-# --- generation ------------------------------------------------------------
 def generate_image(prompt, width=1024, height=1024, steps=20, seed=None, guidance=3.5):
     _mkdir()
     ensure_up()

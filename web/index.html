@@ -104,7 +104,7 @@
   <span class="muted"><span id="cfDot" class="dot"></span>comfyui</span>
   <span class="muted">model <b id="modelName">?</b></span>
   <span class="muted">free <b id="freeGb">?</b> GB</span>
-  <span id="loadtag">● loading model…</span>
+  <span id="loadtag">loading model...</span>
   <span class="spacer"></span>
   <button onclick="ctl('start')">Start</button>
   <button onclick="ctl('stop')">Stop</button>
@@ -113,7 +113,7 @@
   <button onclick="ctl('recover')">Recover</button>
   <button class="danger" onclick="shutdown()">Close</button>
 </header>
-<div id="banner">server offline — reconnecting…</div>
+<div id="banner">server offline - reconnecting...</div>
 
 <div id="chats">
   <div class="top"><button class="primary" style="width:100%" onclick="newChat()">+ New chat</button></div>
@@ -126,7 +126,7 @@
     <div id="chips"></div>
     <div id="inputrow">
       <button id="plus" title="Attach image/video">+</button>
-      <textarea id="text" placeholder="Ask aiX…  (drop a file, or press + to attach)"></textarea>
+      <textarea id="text" placeholder="Ask aiX...  (drop a file, or press + to attach)"></textarea>
       <button class="primary" id="send">Send</button>
       <button id="stop" title="Cancel (Esc)">Stop</button>
     </div>
@@ -263,7 +263,7 @@ async function send(){
     busy=true; document.body.classList.add('busy');
     runningChat=chatId; loadChatList();
     subscribe(chatId);
-  }catch(e){ setOnline(false); addTool('⚠ connection lost — is the server running?'); }
+  }catch(e){ setOnline(false); addTool('connection lost - is the server running?'); }
 }
 async function stopTurn(){ try{ await fetch('/api/cancel',{method:'POST'}); }catch(e){} }
 
@@ -324,15 +324,15 @@ async function pin(id,v){ await fetch('/api/pin/'+id,{method:'POST',headers:{'Co
 async function del(id){ if(confirm('Delete this output?')){ await fetch('/api/delete/'+id,{method:'POST'}); renderPanel(); } }
 
 // ---- controls / status ----
-async function ctl(a){ toast(a+'…'); const r=await (await fetch('/api/control/'+a,{method:'POST'})).json(); toast(a+': '+JSON.stringify(r)); status(); }
+async function ctl(a){ toast(a+'...'); const r=await (await fetch('/api/control/'+a,{method:'POST'})).json(); toast(a+': '+JSON.stringify(r)); status(); }
 async function doClean(){ const r=await (await fetch('/api/clean',{method:'POST'})).json(); toast('clean: '+JSON.stringify(r)); status(); renderPanel(); }
-async function shutdown(){ if(confirm('Stop all aiX processes (incl. Ollama) and close?')){ await fetch('/api/shutdown',{method:'POST'}); toast('Shutting down…'); } }
+async function shutdown(){ if(confirm('Stop all aiX processes (incl. Ollama) and close?')){ await fetch('/api/shutdown',{method:'POST'}); toast('Shutting down...'); } }
 async function status(){
   try{ const s=await (await fetch('/api/status')).json();
     setOnline(true);
     $('#olDot').className='dot'+(s.ollama?' on':''); $('#cfDot').className='dot'+(s.comfyui?' on':'');
     $('#modelName').textContent=s.model||'?'; $('#freeGb').textContent=s.free_gb;
-    if(busy) $('#loadtag').textContent = s.model_loaded ? '● generating…' : '● loading model…';
+    if(busy) $('#loadtag').textContent = s.model_loaded ? 'generating...' : 'loading model...';
     if(s.running_chat!==runningChat){ runningChat=s.running_chat; loadChatList(); }
   }catch(e){ setOnline(false); }
 }

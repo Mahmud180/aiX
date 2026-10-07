@@ -1,9 +1,4 @@
-"""Media facade - routes generation to the configured backend.
-
-The only backend is ComfyUI (real diffusion). The procedural placeholder
-generator has been removed; if ComfyUI is unavailable the call raises a clear
-error instead of fabricating output.
-"""
+"""Media generation facade over the ComfyUI backend."""
 
 import comfyui_backend as backend
 

@@ -1,8 +1,4 @@
-"""Persistent chat storage.
-
-Each chat is a JSON file in chats/<id>.json written atomically, so history
-survives reloads and power cuts. Multiple chats can coexist.
-"""
+"""Persistent chat storage."""
 
 import json
 import time
@@ -58,7 +54,7 @@ def _autotitle(messages):
     for m in messages:
         if m.get("role") == "user" and isinstance(m.get("content"), str) and m["content"].strip():
             text = m["content"].strip().replace("\n", " ")
-            return text[:48] + ("…" if len(text) > 48 else "")
+            return text[:48] + ("..." if len(text) > 48 else "")
     return "New chat"
 
 

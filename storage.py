@@ -1,9 +1,4 @@
-"""Output library, retention and export.
-
-Every generated file is registered here with a JSON sidecar and a row in
-library.db. Retention keeps the newest KEEP_LAST outputs (plus anything pinned)
-and only trims when D: is under MIN_FREE_GB, deleting cache first.
-"""
+"""Output library: registration, retention and export."""
 
 import json
 import os

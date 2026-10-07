@@ -1,9 +1,4 @@
-"""aiX web UI - Flask server + SSE streaming chat.
-
-Single-user local app. Provides the chat, uploads (+/drag-drop), the output
-library with download/export/pin/delete, retention, recovery and process
-control.
-"""
+"""aiX web UI."""
 
 import json
 import os
@@ -38,8 +33,7 @@ from ollama_client import OllamaClient
 
 app = Flask(__name__, static_folder=None)
 
-# One generation at a time (12 GB GPU). The RUN dict is the shared, resumable
-# state of the current turn so any client can (re)attach to the stream.
+# one generation at a time; shared so clients can reattach to a running turn
 _RUN = {
     "chat_id": None,
     "running": False,
@@ -77,8 +71,6 @@ def _requeue_executor(kind, args):
 
 
 def _background_recovery():
-    # Runs first; the marker is (re)set afterwards so this startup isn't
-    # itself mistaken for an unclean exit.
     report = None
     try:
         report = recover.run(executor=_requeue_executor)
@@ -90,7 +82,7 @@ def _background_recovery():
             state.set_marker(_STATE["session"].id)
 
 
-# --- static / page ---------------------------------------------------------
+# --- static / page ---
 @app.route("/")
 def index():
     return send_from_directory(str(WEB_DIR), "index.html")
@@ -101,7 +93,7 @@ def web_assets(path):
     return send_from_directory(str(WEB_DIR), path)
 
 
-# --- status / control ------------------------------------------------------
+# --- status / control ---
 def _model_loaded():
     try:
         import requests
@@ -161,7 +153,7 @@ def api_shutdown():
     return jsonify({"ok": True, **result})
 
 
-# --- chat (start turn + resumable stream) ----------------------------------
+# --- chat ---
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
     data = request.get_json(force=True, silent=True) or {}
@@ -178,14 +170,13 @@ def api_chat():
         chat_id = chat["id"]
 
     messages = list(chat.get("messages", []))
-    # Persist the user message immediately so switching chats / reloading never
-    # loses it while the turn runs.
+    # save the user message before the turn starts
     chats.save_chat(chat_id, messages + [{"role": "user", "content": text}], status="generating")
 
     agent = _STATE["agent"]
     agent.reset()
     agent.messages = messages
-    # Startup is async now, so re-detect tool support at turn time.
+    # re-detect tool support (startup is async)
     try:
         client = _STATE.get("client")
         if client and client.is_up():
@@ -228,7 +219,7 @@ def _sse(obj):
 
 @app.route("/api/chat/stream/<cid>")
 def api_chat_stream(cid):
-    """Replay the current turn's buffered events for <cid>, then tail it."""
+    """Stream a running turn's buffered events."""
     def gen():
         idx = 0
         while True:
@@ -258,7 +249,7 @@ def api_chat_state(cid):
     })
 
 
-# --- chats -----------------------------------------------------------------
+# --- chats ---
 @app.route("/api/chats")
 def api_chats():
     return jsonify({"chats": chats.list_chats()})
@@ -304,7 +295,7 @@ def api_cancel():
     return jsonify({"ok": True})
 
 
-# --- uploads / inputs ------------------------------------------------------
+# --- uploads / inputs ---
 @app.route("/api/upload", methods=["POST"])
 def api_upload():
     INPUTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -344,7 +335,7 @@ def _attachments():
     return out
 
 
-# --- outputs / library -----------------------------------------------------
+# --- outputs / library ---
 @app.route("/api/outputs")
 def api_outputs():
     return jsonify({"outputs": storage.list_outputs()})

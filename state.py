@@ -1,8 +1,4 @@
-"""Durable state: atomic file writes, a SQLite job ledger, and a PID registry.
-
-Everything here is written to survive a hard power cut: writes go through a
-temp file + fsync + atomic rename, and the SQLite ledger runs in WAL mode.
-"""
+"""Durable state: atomic writes, job ledger and process registry."""
 
 import json
 import os
@@ -51,7 +47,7 @@ def read_json(path, default=None):
         return default
 
 
-# --- run marker (detect a previous unclean exit) ---------------------------
+# run marker (detect a previous unclean exit)
 def set_marker(token):
     ensure_dirs()
     atomic_write(RUN_MARKER, json.dumps({"token": token, "started": time.time()}))
@@ -68,7 +64,7 @@ def clear_marker():
         pass
 
 
-# --- job ledger ------------------------------------------------------------
+# job ledger
 def _db():
     ensure_dirs()
     conn = sqlite3.connect(str(STATE_DB), timeout=30)
@@ -177,7 +173,7 @@ def interrupted_jobs():
     return [{"id": r[0], "kind": r[1], "args": read_json_text(r[2])} for r in rows]
 
 
-# --- process registry ------------------------------------------------------
+# process registry
 def register_process(name, pid):
     ensure_dirs()
     reg = read_json(RUN_DIR / "processes.json", {}) or {}

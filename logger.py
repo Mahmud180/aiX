@@ -1,10 +1,6 @@
-"""Session logging for aiX.
+"""Append-only session logging.
 
-Two artefacts per session, both append-only so a power cut only ever risks the
-final line (which the tolerant reader discards):
-
-  logs/sessions/<id>.jsonl  - structured events for tooling / future analysis
-  logs/sessions/<id>.log    - full console transcript (tee of stdout/stderr)
+Writes logs/sessions/<id>.jsonl (events) and <id>.log (console transcript).
 """
 
 import json

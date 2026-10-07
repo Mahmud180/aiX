@@ -1,9 +1,4 @@
-"""aiX agent core - UI agnostic.
-
-The Agent streams tokens and tool events through an optional ``emit`` callback
-so the CLI, the web UI and tests can all share the same loop. Every event is
-also written to the durable session log.
-"""
+"""aiX chat agent."""
 
 import argparse
 import datetime as dt
@@ -57,7 +52,6 @@ class Agent:
         self.confirm = confirm or (lambda name, args: False)
         self.cancel_check = cancel_check
 
-    # --- logging helpers ---------------------------------------------------
     def _event(self, kind, **data):
         if self.log:
             self.log.event(kind, **data)
@@ -101,7 +95,6 @@ class Agent:
         msgs.extend(self.messages)
         return msgs
 
-    # --- turn --------------------------------------------------------------
     def run_turn(self, user_text):
         self._event("user", text=user_text)
         self.messages.append({"role": "user", "content": user_text})

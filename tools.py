@@ -1,8 +1,4 @@
-"""Tool implementations and JSON specs exposed to the model.
-
-File tools are sandboxed to WORKSPACE. `run_shell` and `write_file` are marked
-dangerous and require interactive confirmation in the agent loop.
-"""
+"""Agent tools and their JSON specs."""
 
 import datetime as _dt
 import json
@@ -146,7 +142,6 @@ def fetch_url(url, max_chars=8000):
 
 
 def _tracked(name, args, fn):
-    """Run a generation job through the durable ledger so it can be requeued."""
     try:
         import state
 
@@ -225,7 +220,7 @@ def describe_image(path, question="Describe this image in detail."):
     return vision.describe_image(path, question=question)
 
 
-# --- ffmpeg utilities ------------------------------------------------------
+# ffmpeg utilities
 def _resolve_media(path):
     from config import INPUTS_DIR, OUTPUT_DIR
 

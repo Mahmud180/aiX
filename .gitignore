@@ -1,9 +1,46 @@
+# Python
 __pycache__/
-*.pyc
-chats/
-media/
-inputs/
-run/
-logs/sessions/
-*.log
+*.py[cod]
 .venv/
+venv/
+
+# Runtime / local state (kept out of the repo)
+run/
+chats/
+inputs/
+media/
+outputs/
+logs/*
+!logs/README.md
+
+# Logs and local databases
+*.log
+*.db
+*.db-wal
+*.db-shm
+
+# Large binaries / model files
+bin/
+*.7z
+*.zip
+*.safetensors
+*.gguf
+*.bin
+*.pt
+*.pth
+*.mp4
+*.webm
+*.png
+*.jpg
+*.jpeg
+
+# Secrets / local config
+.env
+*.env
+
+# OS / editor
+Thumbs.db
+Desktop.ini
+.DS_Store
+.idea/
+.vscode/

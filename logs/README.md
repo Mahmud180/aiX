@@ -1,12 +1,12 @@
-# aiX logs
+# Logs
 
-Everything the system does is logged here so sessions can be replayed and mined
-for future development. All files are append-only; a hard power cut can only
-ever lose the final partial line, which `recover.py` / `logger.read_session_tolerant`
+Session logs live here so past runs can be replayed later. Files are
+append-only; a power cut can only lose the final partial line, which the reader
 drops.
 
 ## logs/sessions/<id>.jsonl
-One JSON object per line. Common fields: `ts` (epoch), `iso`, `kind`.
+
+One JSON object per line. Common fields: `ts` (epoch seconds), `iso`, `kind`.
 
 | kind | extra fields |
 |---|---|
@@ -17,26 +17,26 @@ One JSON object per line. Common fields: `ts` (epoch), `iso`, `kind`.
 | `tool_call` | `name`, `args` |
 | `tool_result` | `name`, `result` (truncated to 2000 chars) |
 | `error` | `where`, `message` |
+| `cancelled` | - |
 | `session_end` | - |
 
 ## logs/sessions/<id>.log
-Full console transcript (stdout/stderr tee) for the session.
 
-## Other logs
-- `logs/ollama.log` - reserved for the Ollama server.
-- `logs/download.log` - model fetch / verify output (from D:\Programming\AI\logs).
+Full console transcript (stdout/stderr) for the session.
 
 ## Durable state
-- `run/state.db` (SQLite, WAL): the job ledger (`jobs`: id, kind, args, status,
-  result, error, created, updated). Jobs left `running` after a power cut are
-  marked `interrupted` and requeued on recovery.
-- `run/processes.json`: PIDs we started (for Stop/Close).
-- `run/.running`: run marker; presence from a previous boot means an unclean exit.
-- `D:\Programming\AI\models_manifest.json`: model file sizes/hashes for verification.
 
-## Reading a session (tolerant)
+- `run/state.db` (SQLite, WAL): the job ledger. A job left `running` after a
+  power cut is marked `interrupted` on the next start.
+- `run/processes.json`: PIDs started by `procman`, used by Stop/Close.
+- `run/.running`: run marker; its presence from a previous boot means an unclean
+  exit.
+- `models_manifest.json`: model file sizes used to verify downloads.
+
+## Reading a session
+
 ```python
 import logger
-for ev in logger.read_session_tolerant("logs/sessions/20261006-123456-abcd.jsonl"):
+for ev in logger.read_session_tolerant("logs/sessions/20260101-000000-abcd.jsonl"):
     print(ev["kind"], ev.get("text") or ev.get("name") or "")
 ```

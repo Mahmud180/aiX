@@ -1,12 +1,4 @@
-"""Recovery guard - run at startup (and from the UI) after a hard power cut.
-
-Steps:
-  1. detect an unclean previous exit via the run marker
-  2. verify every model against models_manifest.json (size check)
-  3. repair torn JSONL session logs
-  4. mark jobs stuck in running/queued as interrupted and requeue them
-  5. clear cache/temp
-"""
+"""Startup recovery after an unclean shutdown."""
 
 import json
 import time
@@ -67,8 +59,8 @@ def run(executor=None, min_free_gb=None):
     models = verify_models()
     logs = repair_logs()
     interrupted = state.mark_interrupted()
-    # Never auto-run heavy media jobs unless explicitly enabled - an interrupted
-    # video would otherwise restart for an hour at boot.
+    # don't auto-run heavy media jobs unless enabled; an interrupted video
+    # would otherwise restart for an hour at boot
     jobs = requeue_jobs(executor if RECOVER_REQUEUE else None)
     temp = storage.clean_cache()
     spaces = storage.retention(min_free_gb=min_free_gb)
